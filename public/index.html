@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html class="no-js fonts-loaded" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+
+    <title>Home</title>
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    <link rel="stylesheet" type="text/css" href="/css/vendor.css">
+
+</head>
+
+<body>
+    <div id="app">
+    <div id="root">
+    </div>
+        
+    </div>
+    <script src="/js/jquery-3.3.1.js"></script>
+    <script src="/js/slick.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.category-slider').slick({
+                dots: false,
+                infinite: false,
+                speed: 600,
+                slidesToShow: 5,
+                slidesToScroll: 5,
+                // cssEase: 'ease',
+                // easing: 'ease',
+                responsive: [
+                    {
+                        breakpoint: 1024,
+                        settings: {
+                            slidesToShow: 5,
+                            slidesToScroll: 5,
+                            infinite: true,
+                            dots: true
+                        }
+                    },
+                    {
+                        breakpoint: 990,
+                        settings: {
+                            slidesToShow: 4,
+                            slidesToScroll: 4
+                        }
+                    },
+                    {
+                        breakpoint: 950,
+                        settings: {
+                            slidesToShow: 3,
+                            slidesToScroll: 3
+                        }
+                    },
+                    {
+                        breakpoint: 769,
+                        settings: {
+                            slidesToShow: 4,
+                            slidesToScroll: 4
+                        }
+                    },
+                    {
+                        breakpoint: 601,
+                        settings: "unslick"
+                    },
+                    {
+                        breakpoint: 480,
+                        settings: "unslick"
+                    }
+                    // You can unslick at a given breakpoint now by adding:
+                    // settings: "unslick"
+                    // instead of a settings object
+                ]
+            });
+            $('.store-card').slick({
+                dots: false,
+                infinite: true,
+                speed: 600,
+                // cssEase: 'ease',
+                // easing: 'ease',
+
+            });
+
+            // $(".slick-prev").append("<div class='slider__arrow--nav slider__arrow--left icon-angle-bracket-left slider__arrow--circle'></div>");
+            // $( ".slick-prev" ).empty();
+            // $(".slick-next").append("<div class='slider__arrow--nav slider__arrow--right icon-angle-bracket-right slider__arrow--circle'></div>");
+            // $( ".slick-next" ).empty();
+        });
+    </script>
+<script>
+        function loginBox() {
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("modal-content").style.display = "block";
+            document.getElementsByTagName('body')[0].style.overflow="hidden";
+        }
+
+        function clsloginBox() {
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("modal-content").style.display = "none";
+            document.getElementsByTagName('body')[0].style.overflow="visible";
+        }
+    </script>
+</body>
+
+</html>
