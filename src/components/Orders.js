@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from '../config/axios';
+import crypto from "crypto-js";
 
 // import { Link } from "react-router-dom";
 
@@ -141,7 +142,11 @@ class Orders extends Component {
     }
 
     toggleActive(data, index) {
-        let payload = { data: { isActive: data[index].isActive } }
+        let data = crypto.AES.encrypt(
+            JSON.stringify({ isActive: data[index].isActive }),
+            config.key
+          ).toString();
+        let payload = { data };
         axios.delete(config.baseURL + 'categories/' + data[index].id, payload).then(res => {
             this.setState({
                 fetchedData: data,

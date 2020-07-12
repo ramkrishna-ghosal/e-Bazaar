@@ -46,6 +46,11 @@ class Header extends Component {
                 profileActive: false
         });
     }
+
+    logOutHandler = () => {
+        localStorage.clear();
+        this.props.changeLogin();
+    }
     render() {
         // var html = document.getElementsByTagName('html');
         // // html.addClass('perfect-scrollbar-off nav-open')
@@ -60,9 +65,9 @@ class Header extends Component {
                 {backdrop?<div className="backdrop" onClick={this.removeBackdropHandler}></div>:null}
                 <nav className="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top ">
                 <div className="container-fluid">
-                    <div className="navbar-wrapper">
+                    {/* <div className="navbar-wrapper">
                         <a className="navbar-brand" href="pablo">Table List</a>
-                    </div>
+                    </div> */}
                     <button type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" 
                     className={this.state.mobNavigationToggleActive?"navbar-toggler toggled":"navbar-toggler"}
                     aria-label="Toggle navigation" onClick={this.navigationToggleHandler}>
@@ -122,7 +127,7 @@ class Header extends Component {
                                     <a className="dropdown-item" href="/">Profile</a>
                                     <a className="dropdown-item" href="/">Settings</a>
                                     <div className="dropdown-divider"></div>
-                                    <a className="dropdown-item" href="/">Log out</a>
+                                    <a className="dropdown-item" href="/" onClick={this.logOutHandler}>Log out</a>
                                 </div>
                             </li>
                         </ul>

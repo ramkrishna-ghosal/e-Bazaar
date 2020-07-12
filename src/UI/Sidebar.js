@@ -4,44 +4,44 @@ import { NavLink } from "react-router-dom";
 function Sidebar() {
   return (
     <div className="sidebar" data-color="purple" data-background-color="white" data-image="../img/sidebar-2.jpg">
-   
-    <div className="logo">
-      <a href="/" className="simple-text logo-normal">
-        E-Commerce
-      </a>
-    </div>
-    <div className="sidebar-wrapper">
-      <ul className="nav">
-        <li className="nav-item">
-          <NavLink className="nav-link" activeClassName="active" exact to="/">
-          {/* <a className="nav-link" href="./dashboard.html"> */}
-            <i className="material-icons">dashboard</i>
-            <p>Dashboard</p>
-          {/* </a> */}
-          </NavLink>
+
+      <div className="logo">
+        <a href="/" className="simple-text logo-normal">
+          <img src="/img/logo.jpg" alt="Ecom Demo" style={{ width: '80px' }} />
+        </a>
+      </div>
+      <div className="sidebar-wrapper">
+        <ul className="nav">
+          <li className="nav-item">
+            <NavLink className="nav-link" activeClassName="active" exact to="/dashboard">
+              {/* <a className="nav-link" href="./dashboard.html"> */}
+              <i className="material-icons">dashboard</i>
+              <p>Dashboard</p>
+              {/* </a> */}
+            </NavLink>
+          </li>
+          <li className="nav-item ">
+            <NavLink className="nav-link" activeClassName="active" to="/category">
+              {/* <a className="nav-link" href="./user.html"> */}
+              <i className="material-icons">person</i>
+              <p>Categories</p>
+              {/* </a> */}
+            </NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink className="nav-link" activeClassName="active" to="/product/all" >
+              {/* <a className="nav-link" href="./tables.html"> */}
+              <i className="material-icons">content_paste</i>
+              <p>Products</p>
+            </NavLink>
+          </li>
+          <li className="nav-item ">
+            <NavLink className="nav-link" activeClassName="active" to="/orders" >
+              <i className="material-icons">library_books</i>
+              <p>Orders</p>
+            </NavLink>
         </li>
-        <li className="nav-item ">
-          <NavLink className="nav-link" activeClassName="active" to="/category">
-          {/* <a className="nav-link" href="./user.html"> */}
-            <i className="material-icons">person</i>
-            <p>Categories</p>
-          {/* </a> */}
-          </NavLink>
-        </li>
-        <li className="nav-item">
-          <NavLink className="nav-link" activeClassName="active" to="/product/all" >
-          {/* <a className="nav-link" href="./tables.html"> */}
-            <i className="material-icons">content_paste</i>
-            <p>Products</p>
-          </NavLink>
-        </li>
-        {/*<li className="nav-item ">
-          <a className="nav-link" href="./typography.html">
-            <i className="material-icons">library_books</i>
-            <p>Typography</p>
-          </a>
-        </li>
-        <li className="nav-item ">
+            {/*<li className="nav-item ">
           <a className="nav-link" href="./icons.html">
             <i className="material-icons">bubble_chart</i>
             <p>Icons</p>
@@ -73,7 +73,7 @@ function Sidebar() {
   </li> */}
       </ul>
     </div>
-  </div>
+      </div>
   );
 }
 
