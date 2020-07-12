@@ -4,16 +4,18 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 
 var jwt = require('jsonwebtoken');
+const decrypt = require('../../utils/crypto');
 // var tokenConfig = require('../../configs/tokenConfigs');
 const config = require('../../configs/appconfig');
 let db;
 router.use((req,res,next)=>{
-    db = config[req.env].mysql;
+    db = config.mysql;
     next();
 })
 
-// username(mob/email), password
-router.post('/login', (req, res) => {
+// username(mob/email), password : DONE
+router.post('/login', decrypt, (req, res, next) => {
+    // console.log(req.body);
     let query = '';
     if (req.body.username.includes('@')) {
         query = `select userId,password from tbl_auth where email=?`;
@@ -22,29 +24,29 @@ router.post('/login', (req, res) => {
         query = `select userId,password from tbl_auth where mobile=?`
     }
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err);
         connection.query(query, req.body.username, function (err, result) {
             connection.release();
-            if (err) return res.send(err.sqlMessage);
+            if (err) return next(err.sqlMessage);
             else if (result.length > 0) {
+                // console.log(result);
                 bcrypt.compare(req.body.password, result[0].password, (err, status) => {
-                    if (err) res.status(200).json({ status: -1, message: "Server Error" });
+                    if (err) next({ status: -1, message: "Server Error" });
                     if (status) {
-                        let token = jwt.sign({ userId: result[0].userId }, config[req.env].tokenConfig.secret);
+                        let token = jwt.sign({ userId: result[0].userId }, config.tokenConfig.secret);
                         let data = {
                             status: 1,
                             token: token,
                             message: "Login Successful"
                         }
-                        res.setHeader('Authorization','Bearer '+ token);
-                        res.status(200).json(data)
+                        next(data)
                     }
                     else {
                         let data = {
                             status: 0,
                             message: "Authentication Error!!"
                         }
-                        res.json(data)
+                        next(data)
                     }
                 });
             }
@@ -53,21 +55,21 @@ router.post('/login', (req, res) => {
                     status: 0,
                     message: "Username Invalid"
                 }
-                res.json(data);
+                next(data);
             }
         });
     })
 });
 
-//  email
-router.post('/forgotpassword', (req, res) => {
+//  email : DONE
+router.post('/forgotpassword', decrypt, (req, res, next) => {
     db.getConnection((err, connection) => {
         let query = `select userId from tbl_auth where email=?`;
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
         connection.query(query, [req.body.email], function (err, rows) {
             if (err) {
                 connection.release();
-                return res.json({ status: -1, message: err.sqlMessage });
+                return next({ status: -1, message: err.sqlMessage });
             }
             else if (rows) {
                 let userId = rows[0].userId;
@@ -75,7 +77,7 @@ router.post('/forgotpassword', (req, res) => {
                 let query = `update tbl_auth set secretCode=? where userId=?`;
                 connection.query(query, [secretCode, userId], function (err, rows) {
                     connection.release();
-                    if (err) return res.json({ status: -1, message: err.sqlMessage });
+                    if (err) return next({ status: -1, message: err.sqlMessage });
                     else if (rows) {
                         let params = {
                             to: req.body.email,
@@ -87,10 +89,10 @@ router.post('/forgotpassword', (req, res) => {
                             status: 1,
                             message: "Email Sent"
                         }
-                        res.json(data);
+                        next(data);
                     }
                     else {
-                        res.json({ status: 0, message: "Password Reset Error" })
+                        next({ status: 0, message: "Password Reset Error" })
                     }
                 });
 
@@ -101,36 +103,36 @@ router.post('/forgotpassword', (req, res) => {
                     status: 0,
                     message: "Wrong email"
                 }
-                res.json(data);
+                next(data);
             }
 
         });
     })
 });
 
-//email,secretCode
-router.post('/verifysecretcode', (req, res) => {
+//email,secretCode : DONE
+router.post('/verifysecretcode', decrypt, (req, res, next) => {
     db.getConnection((err, connection) => {
         let query = `select secretCode from tbl_auth where email=?`;
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
         connection.query(query, [req.body.email], function (err, rows) {
             if (err) {
                 connection.release();
-                return res.json({ status: -1, message: err.sqlMessage });
+                return next({ status: -1, message: err.sqlMessage });
             }
             else if (rows[0]) {
                 if (req.body.secretCode === rows[0].secretCode) {
                     let query = `update tbl_auth set secretCode=NULL where email=?`;
                     connection.query(query, [req.body.email], function (err, rows) {
                         connection.release();
-                        if (err) return res.json({ status: -1, message: err.sqlMessage });
+                        if (err) return next({ status: -1, message: err.sqlMessage });
                         else if (rows.affectedRows > 0) {
 
                             let data = {
                                 status: 1,
                                 message: "Validation Success"
                             }
-                            res.json(data)
+                            next(data)
                         }
                     });
 
@@ -140,7 +142,7 @@ router.post('/verifysecretcode', (req, res) => {
                         status: 0,
                         message: "Validation Code mismatch"
                     }
-                    res.json(data)
+                    next(data)
                 }
             }
             else {
@@ -149,27 +151,27 @@ router.post('/verifysecretcode', (req, res) => {
                     status: -1,
                     message: "Wrong email entered"
                 }
-                res.json(data)
+                next(data)
             }
 
         });
     })
 });
 
-// email,newPassword
-router.post('/changepassword', (req, res) => {
+// email,newPassword : DONE
+router.post('/changepassword', decrypt, (req, res, next) => {
     let data;
     db.getConnection((err, connection) => {
         let query = `select userId from tbl_auth where email=?`;
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
         connection.query(query, [req.body.email], function (err, rows) {
             if (err) {
                 connection.release();
-                return res.json({ status: -1, message: err.sqlMessage });
+                return next({ status: -1, message: err.sqlMessage });
             }
             else if (rows) {
                 let userId = rows[0].userId;
-                bcrypt.hash(req.body.newPassword, config[req.env].tokenConfig.saltRounds, function (err, hashedPassword) {
+                bcrypt.hash(req.body.newPassword, config.tokenConfig.saltRounds, function (err, hashedPassword) {
                     params = {
                         password: hashedPassword,
                         createdat: new Date()
@@ -177,20 +179,20 @@ router.post('/changepassword', (req, res) => {
                     sql = `update tbl_auth set ? where userId=?`
                     connection.query(sql, [params,userId], (err, result) => {
                         connection.release();
-                        if (err) res.json({ status: -1, message: "Server Error", error: err })
+                        if (err) next({ status: -1, message: "Server Error", error: err })
                         else if(result.affectedRows>0){
                             data = {
                                 status: 1,
                                 message: "Password updated successful"
                             }
-                            res.json(data);
+                            next(data);
                         }
                         else{
                             data = {
                                 status: 0,
                                 message: "Update Failed"
                             };
-                            res.json(data);   
+                            next(data);   
                         }
                     });
                 })
@@ -202,7 +204,7 @@ router.post('/changepassword', (req, res) => {
                     status: 0,
                     message: "Wrong email"
                 }
-                res.json(data);
+                next(data);
             }
 
         });
@@ -214,14 +216,14 @@ module.exports = router;
 
 addLogin = (req, res, id, connection) => {
     bcrypt.hash(req.body.password, tokenConfig.saltRounds, function (err, hash) {
-        if (err) return res.json({ message: "Encryption Error" });
+        if (err) return next({ message: "Encryption Error" });
         else {
             let hashedPassword = hash;
             sql = `select userId from tbl_registration where id=?`
             connection.query(sql, id, (err, result) => {
                 if (err) {
                     connection.release();
-                    res.json({ status: -1, message: "Server Error", error: err })
+                    next({ status: -1, message: "Server Error", error: err })
                 }
                 else {
                     params = {
@@ -234,13 +236,13 @@ addLogin = (req, res, id, connection) => {
                     sql = `insert into tbl_auth set ?`
                     connection.query(sql, [params], (err, result) => {
                         connection.release();
-                        if (err) res.json({ status: -1, message: "Server Error", error: err })
+                        if (err) next({ status: -1, message: "Server Error", error: err })
                         else {
                             data = {
                                 status: 1,
                                 message: "Data inserted successful"
                             }
-                            res.json(data);
+                            next(data);
                         }
                     });
                 }

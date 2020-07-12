@@ -3,17 +3,26 @@
 const express = require('express');
 const router = express.Router();
 const verifyToken = require('../../utils/verifyToken');
-const db = require('../../configs/mysql');
+// const db = require('../../configs/mysql');
+
+const decrypt = require("../../utils/crypto");
+// var tokenConfig = require('../../configs/tokenConfigs');
+const config = require("../../configs/appconfig");
+let db;
+router.use((req, res, next) => {
+  db = config.mysql;
+  next();
+});
 
 
 
 router.use(verifyToken);
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
     let data;
     let sql = `select id,label,houseno,address1,address2,area,pincode,contactPersonName,contactPersonPhone,isdefault from tbl_address where userId=? and isActive=true`;
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
         connection.query(sql, [req.userId], (err, result) => {
             if (err) {
                 data = {
@@ -36,19 +45,19 @@ router.get('/', (req, res) => {
                 };
             }
             connection.release();
-            res.status(200).json(data);
+            next(data);
         })
     })
 
 
 })
 
-router.get('/:id', (req, res) => {
+router.get('/:id', (req, res, next) => {
     let data;
     let sql = `select label,houseno,address1,address2,area,pincode,contactPersonName,contactPersonPhone,isdefault from
     tbl_address where userId='${req.userId}' and id=${req.params.id} and isActive=true`;
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
 
         connection.query(sql, (err, result) => {
             // console.log(sql,result)
@@ -72,15 +81,16 @@ router.get('/:id', (req, res) => {
                     message: "No Records Found"
                 }
             }
-            res.json(data);
+            next(data);
         })
     });
 })
 
 /**
  params: label,houseNo,address1,address2,area,pincode,contactPersonName,contactPersonPhone,isdefault
+ DONE
  */
-router.post('/', (req, res) => {
+router.post('/', decrypt, (req, res, next) => {
     let data;
     let sql = `select count(*) as count from tbl_address where label=? and userId=? and isActive=true`;
     db.getConnection((err, connection) => {
@@ -90,7 +100,7 @@ router.post('/', (req, res) => {
                 message: "SQL Error",
                 error: err
             }
-            res.json(data);
+            next(data);
         }
         else {
             connection.query(sql, [req.body.label, req.userId], (err, result) => {
@@ -101,7 +111,7 @@ router.post('/', (req, res) => {
                         message: "Server Error",
                         error: err
                     }
-                    res.json(data);
+                    next(data);
                 }
                 else if (result[0].count === 0) {
                     let data = {
@@ -114,7 +124,7 @@ router.post('/', (req, res) => {
                         contactPersonName: req.body.contactPersonName,
                         contactPersonPhone: req.body.contactPersonPhone,
                         userId: req.userId,
-                        createdat: new Date().toISOString(),
+                        createdat: new Date().toISOString().replace('T', ' ').replace('Z',''),
                         isActive: true
                     }
                     let sql = `select count(*) as count from tbl_address where isdefault=1 and userId=? and isActive=true`;
@@ -126,7 +136,7 @@ router.post('/', (req, res) => {
                                 message: "Server Error",
                                 error: err
                             }
-                            res.json(data);
+                            next(data);
                         }
                         else if (result[0].count === 0) {
                             data.isdefault = 1;
@@ -143,21 +153,21 @@ router.post('/', (req, res) => {
                                     message: "Server Error",
                                     error: err
                                 }
-                                res.json(data);
+                                next(data);
                             }
                             else if (result.affectedRows > 0) {
                                 data = {
                                     status: 1,
                                     message: "Data Inserted"
                                 }
-                                res.json(data);
+                                next(data);
                             }
                             else {
                                 data = {
                                     status: 0,
                                     message: "Unable to Insert records"
                                 }
-                                res.json(data);
+                                next(data);
                             }
                         });
                     });
@@ -169,7 +179,7 @@ router.post('/', (req, res) => {
                         status: 0,
                         message: "Address already exists"
                     }
-                    res.json(data);
+                    next(data);
                 }
             });
         }
@@ -178,18 +188,23 @@ router.post('/', (req, res) => {
 
 /* 
 params: label,houseNo,address1,address2,area,pincode,
-        contactPersonName,contactPersonPhone,isdefault,isActive
+        contactPersonName,contactPersonPhone
+         DONE
 */
-router.put('/:id', (req, res) => {
+router.put('/:id', decrypt, (req, res, next) => {
     let data;
     // console.log(Object.keys(req.body));return
     // if (req.body.isActive) {
     //     delete req.body.isActive;
     // }
-    let sql = `select count(*) as count from tbl_address where label=? and userId=? and isActive=1`
+    // console.log(req.body, req.userId);
+    
+    let sql = `select count(*) as count from tbl_address where id<>? and label=? and userId=? and isActive=1`
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
-        connection.query(sql, [data, req.params.id], (err, result) => {
+        if (err) return next(err.sqlMessage);
+        connection.query(sql, [req.params.id, req.body.label, req.userId], (err, result) => {
+            // console.log(result);
+            
             if (err) {
                 connection.release();
                 data = {
@@ -197,9 +212,9 @@ router.put('/:id', (req, res) => {
                     message: "Error Occured",
                     error: err
                 }
-                res.json(data);
+                next(data);
             }
-            else if (result[0].count <= 1) {
+            else if (result[0].count === 0) {
                 data = {
                     label: req.body.label,
                     houseno: req.body.houseno,
@@ -209,7 +224,7 @@ router.put('/:id', (req, res) => {
                     pincode: req.body.pincode,
                     contactPersonName: req.body.contactPersonName,
                     contactPersonPhone: req.body.contactPersonPhone,
-                    updatedat: new Date().toISOString(),
+                    updatedat: new Date().toISOString().replace('T', ' ').replace('Z', '')
                 }
                 sql = 'UPDATE tbl_address SET ? where id=? and isActive=true'
                 connection.query(sql, [data, req.params.id], (err, result) => {
@@ -233,7 +248,7 @@ router.put('/:id', (req, res) => {
                             message: "No Records Found"
                         }
                     }
-                    res.json(data);
+                    next(data);
                 })
             }
             else {
@@ -242,7 +257,7 @@ router.put('/:id', (req, res) => {
                     status: 0,
                     message: "Label already exists"
                 }
-                res.json(data);
+                next(data);
 
             }
         })
@@ -251,7 +266,7 @@ router.put('/:id', (req, res) => {
 
 })
 
-router.put('/default/:id', (req, res) => {
+router.put('/default/:id', (req, res, next) => {
     let data;
     // console.log(Object.keys(req.body));return
     // if (req.body.isActive) {
@@ -259,7 +274,7 @@ router.put('/default/:id', (req, res) => {
     // }
     let sql = `UPDATE tbl_address SET isdefault=0 where userId=? and isActive=1`
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
+        if (err) return next(err.sqlMessage);
         connection.query(sql, [req.userId], (err, result) => {
             if (err) {
                 connection.release();
@@ -268,7 +283,7 @@ router.put('/default/:id', (req, res) => {
                     message: "Error Occured",
                     error: err
                 }
-                res.json(data);
+                next(data);
             }
             else if (result.affectedRows > 0) {
                 sql = `UPDATE tbl_address SET isdefault=1 where id=? and userId=? and isActive=1`;
@@ -293,7 +308,7 @@ router.put('/default/:id', (req, res) => {
                             message: "No Data present"
                         }
                     }
-                    res.json(data);
+                    next(data);
                 });
             }
             else {
@@ -302,7 +317,7 @@ router.put('/default/:id', (req, res) => {
                     status: 0,
                     message: "No Data present"
                 }
-                res.json(data);
+                next(data);
 
             }
 
@@ -315,15 +330,15 @@ router.put('/default/:id', (req, res) => {
 /*
 params : isActive
 */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req, res, next) => {
     let data = {
-        updatedat: new Date().toISOString(),
+        updatedat: new Date().toISOString().replace('T', ' ').replace('Z',''),
         isActive: 0
     }
-    let sql = `UPDATE tbl_address SET ? where id=? and isActive=1`;
+    let sql = `UPDATE tbl_address SET ? where id=? and userId=? and isActive=1`;
     db.getConnection((err, connection) => {
-        if (err) return res.send(err.sqlMessage);
-        connection.query(sql, [data, req.params.id], (err, result) => {
+        if (err) return next(err.sqlMessage);
+        connection.query(sql, [data, req.params.id, req.userId], (err, result) => {
             connection.release();
             if (err) {
                 data = {
@@ -344,7 +359,7 @@ router.delete('/:id', (req, res) => {
                     message: "No Records Found"
                 };
             }
-            res.json(data);
+            next(data);
         })
     });
 })

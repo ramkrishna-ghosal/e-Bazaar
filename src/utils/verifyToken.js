@@ -1,5 +1,6 @@
 var jwt = require('jsonwebtoken');
-var tokenConfig = require('../configs/tokenConfigs');
+const config = require("../configs/appconfig");
+
 verifyToken = (req, res, next) => {
     let token_header = req.headers['authorization'];
     let token='';
@@ -9,7 +10,7 @@ verifyToken = (req, res, next) => {
     else{
         return res.status(403).send({ auth: false, message: 'Forbidden!!' });
     }
-    jwt.verify(token, tokenConfig.secret, function (err, decoded) {
+    jwt.verify(token, config.tokenConfig.secret, function (err, decoded) {
         if (err)
             return res.send({ auth: false, message: 'Invalid Signature!' });
         // if everything good, save to request for use in other routes

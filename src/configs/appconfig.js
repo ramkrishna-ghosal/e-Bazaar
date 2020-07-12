@@ -1,33 +1,38 @@
-const mysql = require('mysql');
+const mysql = require("mysql");
 
-module.exports.prod = {
-    env:'prod',
-    tokenConfig: {
-        secret: 'ecom-web',
-        saltRounds: 10
-    },
-    mysql: mysql.createPool({
-        connectionLimit: 10,
-        host: 'localhost',
-        user: 'logistic_user',
-        password: 'Password@123',
-        database: 'a1869d62c_ecomsite',
-        debug: false
-    }),
-};
+///prod
+// module.exports = {
+//     env:'dev',
+//     tokenConfig: {
+//         secret: 'ecom-web',
+//         saltRounds: 10
+//     },
+//   mysql: mysql.createPool({
+//     connectionLimit: 10,
+//     host: 'localhost',
+//     user: 'ebazaar',
+//     password: 'D1f68?xy',
+//     database: 'a1869d62c_ecomtest',
+//     debug: false
+// }),
+//     encryptKey: 'e-B@zAAr'
+// };
 
-module.exports.dev = {
-    env:'dev',
-    tokenConfig: {
-        secret: 'ecom-web',
-        saltRounds: 10
-    },
-    mysql: mysql.createPool({
-        connectionLimit: 10,
-        host: 'localhost',
-        user: 'logistic_user',
-        password: 'Password@123',
-        database: 'ecomsite',
-        debug: false
-    }),
+//dev
+module.exports = {
+  env: "dev",
+  tokenConfig: {
+    secret: 'ecom-web',
+    saltRounds: 10,
+  },
+  mysql: mysql.createPool({
+    connectionLimit: 10,
+    host: "rkghosal.co.in",
+    user: "ebazaar",
+    password: "D1f68?xy",
+    database: "a1869d62c_ecomtest",
+    debug: false,
+  }),
+  encryptKey: "e-B@zAAr",
+  cipherKey: "e-R@@Zab"
 };

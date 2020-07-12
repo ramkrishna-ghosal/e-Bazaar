@@ -1,8 +1,8 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
-const userRoutes = require('./user/routes');
-const adminRoutes = require('./admin/routes');
-
+const userRoutes = require("./user/routes");
+const adminRoutes = require("./admin/routes");
+const decrypt = require("../utils/crypto");
 
 // const category = require('./category')
 // const orders = require('./orders')
@@ -11,15 +11,16 @@ const adminRoutes = require('./admin/routes');
 // const review = require('./review')
 // const subcategory = require('./subcategory')
 
-
 // router.use('/categories', category);
 // router.use('/subcategories', subcategory);
 // router.use('/products', product);
 // router.use('/productVariants', productVariant);
 // router.use('/orders', orders);
 // router.use('/reviews', review);
+// router.use(decrypt);
 
-router.use('/user',userRoutes)
-router.use('/admin',adminRoutes)
+router.use("/user", userRoutes);
+router.use("/admin", adminRoutes);
+
 
 module.exports = router;

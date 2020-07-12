@@ -1,6 +1,15 @@
 const router = require('express').Router();
-const db = require('../../configs/mysql');
 const verifyToken = require('../../utils/verifyToken');
+
+const decrypt = require("../../utils/crypto");
+// var tokenConfig = require('../../configs/tokenConfigs');
+const config = require("../../configs/appconfig");
+
+let db;
+router.use((req, res, next) => {
+  db = config.mysql;
+  next();
+});
 
 router.use(verifyToken);
 
@@ -12,7 +21,7 @@ on b.variantId=c.variantId and c.productId=d.productId where b.orderNo='ORD-0000
 sql for order details:
 select * from tbl_orders where customerid='USR-0000001'
 */
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
     db.getConnection((err, connection) => {
         let data;
         if (err) {
@@ -34,34 +43,19 @@ router.get('/', (req, res) => {
                 }
             }
             else if (rows.length > 0) {
-                let orders = rows;
-                orders.map((row, key) => {
-                    sql = `select b.id,b.variantId,b.quantity,b.amount,c.image,c.price,c.discountPrice,c.stock,c.label,d.name,d.description from tbl_orderedProducts as b inner join tbl_productvariants as c inner join tbl_products as d on b.variantId=c.variantId and c.productId=d.productId where b.orderNo=?`;
-                    connection.query(sql, row.orderNo, (err, rows) => {
-                        if (err) {
-
-                        }
-                        else if (rows.length > 0) {
-                            row.productDetails = rows;
-                            if (key == orders.length - 1) {
-                                data = {
-                                    status: 1,
-                                    message: "Data fetch successful",
-                                    data: orders
-                                }
-                                res.json(data)
-                            }
-                        }
-                    })
-                })
-
+                data = {
+                    status: 1,
+                    message: "Data fetch successful",
+                    data: rows
+                }
+                next(data)
             }
             else {
                 data = {
                     status: 0,
                     message: "No Data Found"
                 }
-                res.json(data);
+                next(data);
             }
         });
     })
@@ -69,21 +63,22 @@ router.get('/', (req, res) => {
 
 /* 	
 deliveryAddress	billingAddress	orderDetails	amount	payment
-orderDetails=> variantId	quantity	amount
 */
-router.post('/', (req, res) => {
+router.post('/', decrypt, (req, res, next) => {
+    // console.log(req.body);
     db.getConnection((err, connection) => {
+        // console.log(err, connection)
         let query = `insert into tbl_orders set ?`;
         let params = {
             customerId: req.userId,
-            deliveryAddress: req.body.deliveryAddress,
-            billingAddress: req.body.billingAddress,
-            // orderDetails: JSON.stringify(req.body.orderDetails),
+            deliveryAddress:  JSON.stringify(req.body.deliveryAddress),
+            billingAddress:  JSON.stringify(req.body.billingAddress),
+            products: JSON.stringify(req.body.orderDetails),
             amount: req.body.amount,
             payment: req.body.payment,
             orderStatus: 'Placed',
             trackingNo: '',
-            createdat: new Date().toISOString()
+            createdat: new Date().toISOString().replace('T', ' ').replace('Z', '')
         }
         if (err) {
             data = {
@@ -91,10 +86,10 @@ router.post('/', (req, res) => {
                 message: "Error Occurred",
                 error: err
             }
-            return res.json(data);
+            return next(data);
         }
         connection.query(query, params, function (err, rows) {
-            // connection.release();
+            connection.release();
             if (err) {
                 data = {
                     status: -1,
@@ -115,47 +110,23 @@ router.post('/', (req, res) => {
                         }
                     }
                     else if (rows.length > 0) {
-                        let temp = req.body.orderDetails;
-                        let param = temp.map(val => {
-                            return [rows[0].orderNo, ...Object.values(val), new Date().toISOString()]
-                        })
-                        query = 'insert into tbl_orderedProducts(orderNo,variantId,quantity,amount,createdat) values ?';
-                        connection.query(query, [param], function (err, rows) {
-                            connection.release();
-                            if (err) {
-                                data = {
-                                    status: -1,
-                                    message: "Error Occurred",
-                                    error: err
-                                }
+                        data = {
+                            status: 1,
+                            message : "Order Placed",
+                            data : {
+                                orderNo: rows[0].orderNo
                             }
-                            else if (rows.affectedRows > 0) {
-                                data = {
-                                    status: 1,
-                                    message: "Data inserted successful"
-                                }
-                            }
-                            else {
-                                data = {
-                                    status: 0,
-                                    message: "Unable to insert"
-                                }
-                            }
-                            res.json(data);
-
-
-                        })
+                        }
                     }
+                    next(data);
                 });
-
-
             }
             else {
                 data = {
                     status: 0,
                     message: "Unable to Insert"
                 }
-                res.json(data);
+                next(data);
 
             }
         });
@@ -163,7 +134,7 @@ router.post('/', (req, res) => {
 
 });
 
-router.put('/cancel/:id', (req, res) => {
+router.put('/cancel/:id', (req, res, next) => {
     db.getConnection((err, connection) => {
         let data;
         let query = `update tbl_orders set ? where id=?`
@@ -180,7 +151,7 @@ router.put('/cancel/:id', (req, res) => {
                     message: "Server Error",
                     error: err
                 }
-                res.json(data);
+                next(data);
             }
             else if (rows.affectedRows > 0) {
                 data = {
@@ -194,13 +165,13 @@ router.put('/cancel/:id', (req, res) => {
                     message: "Data update failed"
                 }
             }
-            res.json(data);
+            next(data);
         });
     });
 });
 
-router.all('/', (req, res) => {
-    return res.json({ status: -1, message: "Forbidden" })
+router.all('/', (req, res, next) => {
+    return next({ status: -1, message: "Forbidden" })
     db.getConnection((err, connection) => {
         if (err) {
             data = {
@@ -236,7 +207,7 @@ router.all('/', (req, res) => {
                     message: "Unable to Delete"
                 }
             }
-            res.json(data);
+            next(data);
         });
     });
 });
